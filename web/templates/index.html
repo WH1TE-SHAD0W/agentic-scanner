@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-8">
+  <h1 class="text-xl font-semibold mb-1">Nový job</h1>
+  <p class="text-sm text-slate-500 mb-4">
+    Jeden job = jeden formulár (jedna extrakcia), aj keď má viac naskenovaných strán.
+    Každá strana sa lokálne preverí na osobné údaje — PHI strany sa extrahujú lokálne,
+    čisté strany idú spolu v jednom volaní do Gemini. Výsledok je jeden zlúčený záznam.
+  </p>
+  <form action="{{ url_for('create_job') }}" method="post" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
+    <input type="file" name="documents" accept=".png,.jpg,.jpeg,.webp" multiple required
+           class="text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-800 file:px-4 file:py-2 file:text-white file:text-sm file:font-medium hover:file:bg-slate-700 file:cursor-pointer">
+    <button type="submit"
+            class="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-500">
+      Vytvoriť job
+    </button>
+  </form>
+</div>
+
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+  <h2 class="text-base font-semibold mb-4">Joby</h2>
+  {% if jobs %}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-200">
+        <th class="py-2 pr-4">Vytvorený</th>
+        <th class="py-2 pr-4">Stav</th>
+        <th class="py-2 pr-4">Strany</th>
+        <th class="py-2">Zhrnutie</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for job in jobs %}
+      <tr class="border-b border-slate-100 hover:bg-slate-50">
+        <td class="py-2 pr-4 whitespace-nowrap">
+          <a href="{{ url_for('job_detail', job_id=job.job_id) }}" class="text-sky-700 hover:underline">
+            {{ job.created[:16].replace('T', ' ') }}
+          </a>
+        </td>
+        <td class="py-2 pr-4">
+          {% if job.state == 'DONE' %}
+            <span class="inline-block rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-xs font-medium">DONE</span>
+          {% elif job.state == 'FAILED' %}
+            <span class="inline-block rounded-full bg-rose-100 text-rose-800 px-2 py-0.5 text-xs font-medium">FAILED</span>
+          {% elif job.state == 'RUNNING' %}
+            <span class="inline-block rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-medium">RUNNING</span>
+          {% else %}
+            <span class="inline-block rounded-full bg-sky-100 text-sky-800 px-2 py-0.5 text-xs font-medium">OPEN</span>
+          {% endif %}
+        </td>
+        <td class="py-2 pr-4">{{ job.pages | length }}</td>
+        <td class="py-2 text-slate-600">{{ job.one_liner or job.error or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-sm text-slate-400">Zatiaľ žiadne joby.</p>
+  {% endif %}
+</div>
+{% endblock %}

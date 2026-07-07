@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Job {{ job.job_id[:8] }} — Colono-Extract{% endblock %}
+
+{% block head %}
+  {% if job.state == 'RUNNING' %}<meta http-equiv="refresh" content="3">{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <div class="flex items-center gap-3">
+    <h1 class="text-xl font-semibold">Job {{ job.job_id[:8] }}</h1>
+    {% if job.state == 'DONE' %}
+      <span class="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-medium">DONE</span>
+    {% elif job.state == 'FAILED' %}
+      <span class="rounded-full bg-rose-100 text-rose-800 px-2.5 py-0.5 text-xs font-medium">FAILED</span>
+    {% elif job.state == 'RUNNING' %}
+      <span class="rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-xs font-medium animate-pulse">RUNNING</span>
+    {% else %}
+      <span class="rounded-full bg-sky-100 text-sky-800 px-2.5 py-0.5 text-xs font-medium">OPEN</span>
+    {% endif %}
+  </div>
+  <a href="{{ url_for('index') }}" class="text-sm text-sky-700 hover:underline">&larr; späť na joby</a>
+</div>
+
+{% if job.state == 'RUNNING' %}
+<p class="mb-6 text-sm text-slate-500">Spracúva sa — stránka sa obnovuje automaticky každé 3 sekundy.</p>
+{% endif %}
+
+{% if job.error %}
+<div class="mb-6 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-900">{{ job.error }}</div>
+{% endif %}
+
+{% if job.conflicts %}
+<div class="mb-6 rounded-lg bg-amber-50 border border-amber-300 px-4 py-3 text-sm text-amber-900">
+  <p class="font-medium mb-1">Konflikty medzi lokálnou a cloudovou extrakciou:</p>
+  <ul class="list-disc list-inside space-y-0.5">
+    {% for c in job.conflicts %}
+    <li><code class="font-mono">{{ c.field }}</code> — lokálne: <b>{{ c.local }}</b>, cloud: <b>{{ c.cloud }}</b></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% if job.state == 'OPEN' %}
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+  <h2 class="text-base font-semibold mb-3">Pridať strany a spustiť</h2>
+  <div class="flex flex-wrap items-center gap-3">
+    <form action="{{ url_for('add_pages', job_id=job.job_id) }}" method="post" enctype="multipart/form-data" class="flex items-center gap-3">
+      <input type="file" name="documents" accept=".png,.jpg,.jpeg,.webp" multiple
+             class="text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-800 file:px-4 file:py-2 file:text-white file:text-sm file:font-medium hover:file:bg-slate-700 file:cursor-pointer">
+      <button type="submit" class="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-300">
+        Pridať strany
+      </button>
+    </form>
+    <form action="{{ url_for('start_job', job_id=job.job_id) }}" method="post">
+      <button type="submit" {% if not job.pages %}disabled{% endif %}
+              class="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed">
+        ▶ Spustiť extrakciu
+      </button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+  <h2 class="text-base font-semibold mb-4">Strany ({{ job.pages | length }})</h2>
+  {% if job.pages %}
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for p in job.pages %}
+    <div class="rounded-lg border border-slate-200 p-3">
+      <img src="{{ url_for('page_image', page_id=p.page_id) }}" alt="{{ p.filename }}"
+           class="h-32 w-full object-contain bg-slate-50 rounded mb-2">
+      <p class="text-sm font-medium truncate mb-1" title="{{ p.filename }}">{{ p.filename }}</p>
+      <div class="flex flex-wrap items-center gap-1.5 mb-1">
+        {% if p.state == 'DONE' %}
+          <span class="rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-xs font-medium">DONE</span>
+        {% elif p.state == 'FAILED' %}
+          <span class="rounded-full bg-rose-100 text-rose-800 px-2 py-0.5 text-xs font-medium">FAILED</span>
+        {% elif p.state in ('CLASSIFYING', 'EXTRACTING') %}
+          <span class="rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-medium animate-pulse">{{ p.state }}</span>
+        {% else %}
+          <span class="rounded-full bg-slate-100 text-slate-600 px-2 py-0.5 text-xs font-medium">{{ p.state }}</span>
+        {% endif %}
+        {% if p.route == 'local' %}
+          <span class="rounded-full bg-rose-100 text-rose-800 px-2 py-0.5 text-xs font-medium">local</span>
+        {% elif p.route == 'cloud' %}
+          <span class="rounded-full bg-sky-100 text-sky-800 px-2 py-0.5 text-xs font-medium">cloud</span>
+        {% endif %}
+        {% if p.extraction_retries %}
+          <span class="text-xs text-slate-400">{{ p.extraction_retries }}× retry</span>
+        {% endif %}
+      </div>
+      {% if p.phi_confidence is not none %}
+      <p class="text-xs text-slate-500">PHI: {{ '%.0f'|format(p.phi_confidence * 100) }} % — {{ p.phi_reasoning or '' }}</p>
+      {% endif %}
+      {% if p.error %}
+      <p class="text-xs text-rose-700 font-mono mt-1">{{ p.error }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm text-slate-400">Job zatiaľ nemá žiadne strany.</p>
+  {% endif %}
+</div>
+
+{% if job.pages | selectattr('route', 'equalto', 'local') | list %}
+<div class="mb-6 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-900">
+  Strany označené <b>local</b> obsahujú osobné údaje — sú držané iba v <code class="font-mono">data/local/</code>,
+  extrahované lokálnym modelom a nikdy neboli odoslané do cloudu.
+</div>
+{% endif %}
+
+{% if sections %}
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+  <h2 class="text-base font-semibold mb-4">Extrahované údaje (zlúčené)</h2>
+  <div class="grid md:grid-cols-2 gap-x-8 gap-y-4">
+    {% for section, fields in sections %}
+    <div>
+      <h3 class="text-xs uppercase tracking-wide text-slate-400 mb-1">{{ section.replace('_', ' ') }}</h3>
+      <dl class="grid grid-cols-2 gap-x-4 gap-y-0.5 text-sm">
+        {% for label, value in fields %}
+        <dt class="text-slate-500">{{ label }}</dt>
+        <dd class="text-right font-mono">{{ value if value is not none else '—' }}</dd>
+        {% endfor %}
+      </dl>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if job.one_liner %}
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+  <h2 class="text-base font-semibold mb-2">Zhrnutie</h2>
+  <p class="text-sm text-slate-700">{{ job.one_liner }}</p>
+</div>
+{% endif %}
+
+{% if tsv_line %}
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-base font-semibold">Riadok pre Excel (TSV)</h2>
+    <button id="copy-btn" onclick="copyTsv()"
+            class="rounded-lg bg-slate-800 px-4 py-1.5 text-xs font-medium text-white hover:bg-slate-700">
+      Kopírovať TSV
+    </button>
+  </div>
+  <p class="text-xs text-slate-400 mb-3">Vlož priamo do cieľového hárku — bunky sú oddelené tabulátormi v poradí stĺpcov registra.</p>
+  <pre id="tsv-line" class="overflow-x-auto rounded-lg bg-slate-900 text-slate-100 px-4 py-3 text-xs font-mono whitespace-pre">{{ tsv_line }}</pre>
+</div>
+
+<script>
+function copyTsv() {
+  const text = document.getElementById('tsv-line').textContent;
+  const done = () => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Skopírované ✓';
+    setTimeout(() => { btn.textContent = 'Kopírovať TSV'; }, 1500);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done);
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    done();
+  }
+}
+</script>
+{% endif %}
+{% endblock %}

@@ -1,12 +1,14 @@
 import shutil
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from datetime import date
 from enum import Enum
 from pathlib import Path
 
 import config
 from agent import tools
 from schemas import excel_column_map
+from schemas.birth_number import age_from_birth_number
 from storage import job_store
 from storage.paths import CLOUD_DIR, LOCAL_DIR, find_page_image
 
@@ -148,7 +150,26 @@ def merge_results(local_datas: list[dict], cloud_data: dict | None):
         else:
             winner = local_value if local_value is not None else cloud_value
         _set_value(merged, path, winner)
+
+    # The birth number encodes the birth date exactly — prefer it over
+    # whatever age the vision model read (or guessed) off the scan.
+    birth_number = excel_column_map.get_value(merged, "patient.birth_number")
+    derived_age = age_from_birth_number(birth_number, _reference_date(merged))
+    if derived_age is not None:
+        _set_value(merged, "patient.age", derived_age)
+
     return merged, conflicts, local_union
+
+
+def _reference_date(merged: dict) -> date | None:
+    """Age as of the procedure date if we have one, otherwise today."""
+    raw = excel_column_map.get_value(merged, "procedure.date")
+    if raw:
+        try:
+            return date.fromisoformat(str(raw)[:10])
+        except ValueError:
+            pass
+    return None
 
 
 def _union(datas: list[dict]) -> dict | None:
