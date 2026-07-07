@@ -11,6 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent
 LM_STUDIO_BASE_URL = os.getenv("LM_STUDIO_BASE_URL", "http://localhost:1234/v1")
 LM_STUDIO_MODEL = os.getenv("LM_STUDIO_MODEL", "")  # empty = whatever model LM Studio has loaded
 LM_STUDIO_TIMEOUT_S = int(os.getenv("LM_STUDIO_TIMEOUT_S", "120"))
+LM_STUDIO_EXTRACT_TIMEOUT_S = int(os.getenv("LM_STUDIO_EXTRACT_TIMEOUT_S", "300"))
 
 # Cloud extractor (Gemini via google-genai)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")

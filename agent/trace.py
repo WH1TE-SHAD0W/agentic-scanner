@@ -5,7 +5,8 @@ from storage.paths import RUN_LOG_PATH
 
 
 def log_trace(
-    doc_id: str,
+    job_id: str,
+    page_id: str | None,  # None for the batched cloud call spanning several pages
     step: str,
     tool: str,
     latency_ms: int,
@@ -17,7 +18,8 @@ def log_trace(
     jsonl_store.append(
         RUN_LOG_PATH,
         {
-            "doc_id": doc_id,
+            "job_id": job_id,
+            "page_id": page_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "step": step,
             "tool": tool,

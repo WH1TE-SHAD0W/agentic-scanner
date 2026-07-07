@@ -11,7 +11,8 @@ from agent.phi_classifier import MIME_TYPES
 from schemas import schema_loader
 
 EXTRACTION_PROMPT = """Extract the structured data from this scanned Slovak colonoscopy
-screening form. Fill every field of the schema; use null where a value is missing or
+screening form. The images are pages/sections of ONE form for ONE patient — combine them
+into a single record. Fill every field of the schema; use null where a value is missing or
 unreadable — never guess. Dates as YYYY-MM-DD. For checkbox/yes-no fields use
 1 = yes/checked, 0 = no/unchecked, null = unknown."""
 
@@ -23,19 +24,22 @@ class ExtractionResult:
     error: str | None
 
 
-def extract_document(image_path: Path, on_attempt) -> ExtractionResult:
-    """Gemini structured extraction with a bounded retry loop.
+def extract_document(image_paths: list[Path], on_attempt) -> ExtractionResult:
+    """Gemini structured extraction over all pages in one call, with a bounded
+    retry loop.
 
     `on_attempt(step, latency_ms, input_tokens, output_tokens, success, error)`
     is invoked for every Gemini call and every validation, so the run trace
     records each attempt, not just the outcome.
     """
     client = genai.Client(api_key=config.GEMINI_API_KEY)
-    path = Path(image_path)
-    image_part = types.Part.from_bytes(
-        data=path.read_bytes(),
-        mime_type=MIME_TYPES.get(path.suffix.lower(), "image/jpeg"),
-    )
+    image_parts = [
+        types.Part.from_bytes(
+            data=Path(p).read_bytes(),
+            mime_type=MIME_TYPES.get(Path(p).suffix.lower(), "image/jpeg"),
+        )
+        for p in image_paths
+    ]
     schema = schema_loader.load_gemini_schema()
 
     prompt = EXTRACTION_PROMPT
@@ -45,7 +49,7 @@ def extract_document(image_path: Path, on_attempt) -> ExtractionResult:
         try:
             response = client.models.generate_content(
                 model=config.GEMINI_MODEL,
-                contents=[image_part, prompt],
+                contents=[*image_parts, prompt],
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
                     response_schema=schema,
