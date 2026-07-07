@@ -1,0 +1,137 @@
+{
+  "type": "object",
+  "properties": {
+    "patient": {
+      "type": "object",
+      "properties": {
+        "kod_pacienta": { "type": "string", "nullable": true },
+        "birth_number": { "type": "string", "nullable": true },
+        "age": { "type": "integer", "nullable": true },
+        "sex": { "type": "string", "nullable": true }
+      },
+      "required": ["kod_pacienta", "birth_number", "age", "sex"]
+    },
+    "procedure": {
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "nullable": true },
+        "screening_type": { "type": "integer", "nullable": true }
+      },
+      "required": ["date", "screening_type"]
+    },
+    "anthropometry": {
+      "type": "object",
+      "properties": {
+        "height_cm": { "type": "number", "nullable": true },
+        "weight_kg": { "type": "number", "nullable": true },
+        "bmi": { "type": "number", "nullable": true }
+      },
+      "required": ["height_cm", "weight_kg", "bmi"]
+    },
+    "audit_c": {
+      "type": "object",
+      "properties": {
+        "q1": { "type": "integer", "nullable": true },
+        "q2": { "type": "integer", "nullable": true },
+        "q3": { "type": "integer", "nullable": true },
+        "total": { "type": "integer", "nullable": true }
+      },
+      "required": ["q1", "q2", "q3", "total"]
+    },
+    "lifestyle": {
+      "type": "object",
+      "properties": {
+        "smoking": { "type": "integer", "nullable": true },
+        "meat_frequency": { "type": "integer", "nullable": true }
+      },
+      "required": ["smoking", "meat_frequency"]
+    },
+    "family_history": {
+      "type": "object",
+      "properties": {
+        "ra_crc_first_degree": { "type": "integer", "nullable": true },
+        "ra_crc_other": { "type": "integer", "nullable": true },
+        "ra_polypy": { "type": "integer", "nullable": true }
+      },
+      "required": ["ra_crc_first_degree", "ra_crc_other", "ra_polypy"]
+    },
+    "medical_history": {
+      "type": "object",
+      "properties": {
+        "hypertension": { "type": "integer", "nullable": true },
+        "diabetes": { "type": "integer", "nullable": true },
+        "hyperlipidemia": { "type": "integer", "nullable": true },
+        "metabolic_syndrome": { "type": "integer", "nullable": true },
+        "ichs": { "type": "integer", "nullable": true },
+        "prior_mi": { "type": "integer", "nullable": true },
+        "ckd": { "type": "integer", "nullable": true },
+        "copd": { "type": "integer", "nullable": true },
+        "oncology_history": { "type": "integer", "nullable": true },
+        "chemotherapy": { "type": "integer", "nullable": true }
+      },
+      "required": [
+        "hypertension",
+        "diabetes",
+        "hyperlipidemia",
+        "metabolic_syndrome",
+        "ichs",
+        "prior_mi",
+        "ckd",
+        "copd",
+        "oncology_history",
+        "chemotherapy"
+      ]
+    },
+    "medications": {
+      "type": "object",
+      "properties": {
+        "nsaid_asa": { "type": "integer", "nullable": true },
+        "anticoagulants": { "type": "integer", "nullable": true },
+        "hypolipidemic_drugs": { "type": "integer", "nullable": true }
+      },
+      "required": ["nsaid_asa", "anticoagulants", "hypolipidemic_drugs"]
+    },
+    "findings": {
+      "type": "object",
+      "properties": {
+        "nalez": { "type": "integer", "nullable": true },
+        "polyp_ta_tva": { "type": "integer", "nullable": true },
+        "polyp_count": { "type": "integer", "nullable": true },
+        "nad_1cm": { "type": "integer", "nullable": true },
+        "divertikuly": { "type": "integer", "nullable": true }
+      },
+      "required": ["nalez", "polyp_ta_tva", "polyp_count", "nad_1cm", "divertikuly"]
+    },
+    "histology": {
+      "type": "object",
+      "properties": {
+        "low_grade": { "type": "integer", "nullable": true },
+        "high_grade": { "type": "integer", "nullable": true },
+        "ssl_without_dysplasia": { "type": "integer", "nullable": true },
+        "ssl_with_dysplasia": { "type": "integer", "nullable": true },
+        "carcinoma": { "type": "integer", "nullable": true },
+        "stadium_ca": { "type": "string", "nullable": true }
+      },
+      "required": [
+        "low_grade",
+        "high_grade",
+        "ssl_without_dysplasia",
+        "ssl_with_dysplasia",
+        "carcinoma",
+        "stadium_ca"
+      ]
+    }
+  },
+  "required": [
+    "patient",
+    "procedure",
+    "anthropometry",
+    "audit_c",
+    "lifestyle",
+    "family_history",
+    "medical_history",
+    "medications",
+    "findings",
+    "histology"
+  ]
+}

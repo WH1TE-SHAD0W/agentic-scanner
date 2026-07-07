@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Výsledok — {{ r.filename }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-xl font-semibold">{{ r.filename }}</h1>
+  <a href="{{ url_for('index') }}" class="text-sm text-sky-700 hover:underline">&larr; späť na nahrávanie</a>
+</div>
+
+<div class="grid md:grid-cols-2 gap-6 mb-6">
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+    <h2 class="text-base font-semibold mb-4">Smerovanie &amp; PHI</h2>
+    <dl class="text-sm space-y-3">
+      <div class="flex justify-between">
+        <dt class="text-slate-500">Trasa</dt>
+        <dd>
+          {% if r.route == 'local' %}
+            <span class="rounded-full bg-rose-100 text-rose-800 px-2 py-0.5 text-xs font-medium">local</span>
+          {% else %}
+            <span class="rounded-full bg-sky-100 text-sky-800 px-2 py-0.5 text-xs font-medium">cloud</span>
+          {% endif %}
+        </dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-slate-500">Stav</dt>
+        <dd class="font-medium">{{ r.state }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-slate-500">PHI istota</dt>
+        <dd>{{ '%.0f'|format(r.phi_confidence * 100) }} %</dd>
+      </div>
+      <div>
+        <dt class="text-slate-500 mb-1">Zdôvodnenie</dt>
+        <dd class="text-slate-700">{{ r.phi_reasoning or '—' }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-slate-500">Extrakcia</dt>
+        <dd>{{ r.extraction_status }}{% if r.extraction_retries %} ({{ r.extraction_retries }}× retry){% endif %}</dd>
+      </div>
+      {% if r.error %}
+      <div>
+        <dt class="text-slate-500 mb-1">Chyba</dt>
+        <dd class="text-rose-700 font-mono text-xs">{{ r.error }}</dd>
+      </div>
+      {% endif %}
+    </dl>
+
+    {% if r.state == 'LOCAL_HELD' %}
+    <div class="mt-4 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-900">
+      Dokument obsahuje osobné údaje — je držaný iba lokálne v <code class="font-mono">data/local/</code>
+      a nebol odoslaný do žiadnej cloudovej služby.
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+    <h2 class="text-base font-semibold mb-4">Extrahované údaje</h2>
+    {% if sections %}
+      <div class="space-y-4">
+        {% for section, fields in sections %}
+        <div>
+          <h3 class="text-xs uppercase tracking-wide text-slate-400 mb-1">{{ section.replace('_', ' ') }}</h3>
+          <dl class="grid grid-cols-2 gap-x-4 gap-y-0.5 text-sm">
+            {% for label, value in fields %}
+            <dt class="text-slate-500">{{ label }}</dt>
+            <dd class="text-right font-mono">{{ value if value is not none else '—' }}</dd>
+            {% endfor %}
+          </dl>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-sm text-slate-400">Žiadne extrahované údaje.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if r.one_liner %}
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+  <h2 class="text-base font-semibold mb-2">Zhrnutie</h2>
+  <p class="text-sm text-slate-700">{{ r.one_liner }}</p>
+</div>
+{% endif %}
+
+{% if tsv_line %}
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-base font-semibold">Riadok pre Excel (TSV)</h2>
+    <button id="copy-btn" onclick="copyTsv()"
+            class="rounded-lg bg-slate-800 px-4 py-1.5 text-xs font-medium text-white hover:bg-slate-700">
+      Kopírovať TSV
+    </button>
+  </div>
+  <p class="text-xs text-slate-400 mb-3">Vlož priamo do cieľového hárku — bunky sú oddelené tabulátormi v poradí stĺpcov registra.</p>
+  <pre id="tsv-line" class="overflow-x-auto rounded-lg bg-slate-900 text-slate-100 px-4 py-3 text-xs font-mono whitespace-pre">{{ tsv_line }}</pre>
+</div>
+
+<script>
+function copyTsv() {
+  const text = document.getElementById('tsv-line').textContent;
+  const done = () => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Skopírované ✓';
+    setTimeout(() => { btn.textContent = 'Kopírovať TSV'; }, 1500);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done);
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    done();
+  }
+}
+</script>
+{% endif %}
+{% endblock %}

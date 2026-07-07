@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Colono-Extract runtime data — patient scans and results must never be committed
+data/
+logs/
+
+# Local build tooling (Tailwind standalone CLI)
+.tools/
