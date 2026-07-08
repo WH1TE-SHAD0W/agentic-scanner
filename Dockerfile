@@ -14,7 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # ---- final: runtime image ----
 FROM python:3.12-slim
 
-RUN addgroup --system app && adduser --system --ingroup app app
+RUN addgroup --system --gid 568 app && \
+    adduser --system --uid 568 --ingroup app app
 
 WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv

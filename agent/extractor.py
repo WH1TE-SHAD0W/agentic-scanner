@@ -10,11 +10,13 @@ import config
 from agent.phi_classifier import MIME_TYPES
 from schemas import schema_loader
 
-EXTRACTION_PROMPT = """Extract the structured data from this scanned Slovak colonoscopy
-screening form. The images are pages/sections of ONE form for ONE patient — combine them
-into a single record. Fill every field of the schema; use null where a value is missing or
-unreadable — never guess. Dates as YYYY-MM-DD. For checkbox/yes-no fields use
-1 = yes/checked, 0 = no/unchecked, null = unknown."""
+EXTRACTION_PROMPT = """Extract the structured data from this scanned Slovak colonoscopy screening form.
+The images are pages/sections of ONE form for ONE patient — combine them into a
+single record. Fill every field of the schema; use null where a value is missing
+or unreadable — never guess. Dates as DD.MM.YYYY . For checkbox/yes-no fields use
+1 = yes/checked, 0 = no/unchecked, null = unknown. Sex coding is 1 = male, 2 = female. 
+
+For the "audit_c" fields, do NOT use clinical scoring/risk points. Instead, extract the 0-based index of the checked option ordered sequentially from top to bottom"""
 
 
 @dataclass
