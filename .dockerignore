@@ -1,0 +1,19 @@
+.git
+.gitignore
+.venv
+.idea
+.tools
+__pycache__
+**/__pycache__
+*.pyc
+
+# never bake real patient data or secrets into an image layer
+data/
+logs/
+.env
+
+tests/
+README.md
+Dockerfile
+.dockerignore
+docker-compose.yml

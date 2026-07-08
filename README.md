@@ -59,6 +59,31 @@ Start **LM Studio** with a vision-capable model loaded and the local server runn
 # → http://localhost:5000
 ```
 
+## Run with Docker
+
+```powershell
+docker compose up --build
+# → http://localhost:5000
+```
+
+- `Dockerfile` is multistage: a `builder` stage installs dependencies into a venv, the
+  final image copies just that venv plus the app code and runs as a non-root user.
+- `docker-compose.yml` mounts the host's `./data` and `./logs` as volumes (`/app/data`,
+  `/app/logs` in the container) — patient scans and job state survive container
+  rebuilds/restarts and stay out of the image entirely (`.dockerignore` also excludes
+  `data/`, `logs/`, `.env`, so nothing sensitive ends up baked into a layer).
+- Served by **gunicorn** with `--workers 1 --worker-class gthread --threads 4`. Workers=1
+  is deliberate, not a placeholder: `agent/orchestrator.py` spawns a background thread per
+  job when you press Start, and the job page's polling requests must land back in that
+  same process to see progress. Don't add `--max-requests` or a second worker — either
+  would split a job's state across processes that can't see each other's threads.
+- `LM_STUDIO_BASE_URL` must point somewhere the container can actually reach — `localhost`
+  means the container itself, not your host. Point it at your host's LAN/Tailscale IP
+  (already the case in this repo's `.env`), or `host.docker.internal` on Docker Desktop.
+- If you deploy this on native Linux (not Docker Desktop) and hit permission errors
+  writing to the mounted `./data`/`./logs`, match the container's `app` user's UID/GID to
+  the host directory owner, or relax the host directory permissions.
+
 ## Configuration (.env)
 
 | Variable | Default | Meaning |
